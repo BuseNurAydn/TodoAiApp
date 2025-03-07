@@ -1,7 +1,7 @@
+
 from fastapi import APIRouter,Path,Depends,HTTPException
-from dataclasses import Field
 from typing import Annotated
-from pydantic import BaseModel
+from pydantic import BaseModel,Field
 from models import Todo
 from sqlalchemy.orm import Session
 from starlette import status
@@ -16,10 +16,10 @@ router = APIRouter(
 
 #request body
 class TodoRequest(BaseModel):
-    title : str = Field(min_length=3)
-    description : str = Field(min_length=3, max_length=1000)
-    priority : int = Field(gt=0, lt=6) #1-5
-    complete : bool
+    title: str = Field(min_length=3)
+    description: str = Field(min_length=3, max_length=1000)
+    priority: int = Field(gt=0, lt=6)
+    complete: bool
 
 
 def get_db():  #Bu fonksiyon bize veritabanını veriyor
