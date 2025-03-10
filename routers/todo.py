@@ -7,10 +7,10 @@ from sqlalchemy.orm import Session
 from starlette import status
 from database import SessionLocal
 #SessionLocal ile veritabanı ile bağlantı sağlayacağız
-
+from routers.auth import get_current_user
 
 router = APIRouter(
-    prefix="/todo",   # API'nin URL yolu, yani endpointlerin başınatodo koyulur
+    prefix="/todo",   #API'nin URL yolu, yani endpointlerin başınatodo koyulur
     tags=["Todo"]   #Swaggerda başlık tagsler
 )
 
@@ -30,11 +30,14 @@ def get_db():  #Bu fonksiyon bize veritabanını veriyor
         db.close()
 
 db_dependency = Annotated[Session, Depends(get_db)]  #Dependency Injection
+user_dependency = Annotated[dict, Depends(get_current_user)]
 
 #get
-@router.get("/get_all")
-async def read_all(db: db_dependency):
-     return db.query(Todo).all()  #models klasöründe oluşturduğumuzTodo sınıfı #veritabanındaki tüm verileri getirir
+@router.get("/")
+async def read_all(user: user_dependency ,db: db_dependency):
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+    return db.query(Todo).filter(Todo.owner_id == user.get('id')).all()  #models klasöründe oluşturduğumuzTodo sınıfı #veritabanındaki tüm verileri getirir
 
 @router.get("/get_by_id/{todo_id}", status_code=status.HTTP_200_OK)
 async def read_by_id(db: db_dependency ,todo_id : int = Path(gt=0)):
@@ -46,8 +49,10 @@ async def read_by_id(db: db_dependency ,todo_id : int = Path(gt=0)):
 #post
 #post metodu oluştururken kendimize has request body oluşturmak en mantıklısı
 @router.post("/create", status_code=status.HTTP_201_CREATED)
-async def create_todo(db: db_dependency ,todo_request: TodoRequest):
-    todo = Todo(**todo_request.model_dump())
+async def create_todo(user: user_dependency,db: db_dependency ,todo_request: TodoRequest):
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+    todo = Todo(**todo_request.model_dump(), owner_id=user.get('id'))
     db.add(todo)
     db.commit() #işlemin yapılacağı anlamına geliyor. commit demessek işlem yapılmaz
 

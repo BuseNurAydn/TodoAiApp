@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Form
 from models import User
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel,EmailStr, Field
@@ -42,13 +42,25 @@ class UserRequest(BaseModel):
     is_active : bool
     role : str
 
+#Kullanıcı giriş şeması
 class LoginSchema(BaseModel):
     email: EmailStr
     password: str
 
+#Token şeması
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+#Özel form yapısı (Swagger ile uyumlu olacak)
+class OAuth2EmailRequestForm:
+    def __init__(
+        self,
+        email: str = Form(..., alias="username"),  # Swagger'da "username" olarak görünecek
+        password: str = Form(...)
+    ):
+        self.email = email
+        self.password = password
 
 #JWT(JSON Web Tokens) -encoding                                   #Ne zaman geçerliliğini kaybedecek
 def create_access_token(email: str, user_id: int, role: str, expires_delta: timedelta ):
@@ -67,8 +79,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
 
         if email is None or user_id is None:
               raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
-
-         return {"email": email, "id": user_id, "role": role}  # Kullanıcı bilgilerini döndür
+        return {"email": email, "id": user_id, "role": role}  # Kullanıcı bilgilerini döndür
     except JWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
@@ -82,7 +93,7 @@ def authenticate_user(email : str, password : str,db):
         return False
     return user
 
-
+#Kullanıcı oluşturma
 @router.post("/create", status_code=status.HTTP_201_CREATED)
 async def create_user(db: db_dependency,user_request : UserRequest):
     user = User(
@@ -98,8 +109,9 @@ async def create_user(db: db_dependency,user_request : UserRequest):
     db.commit()
 
 
+#Kullanıcı giriş yaparak token alma
 @router.post("/token", response_model=Token)
-async def login_for_access_token(form_data: LoginSchema,db: db_dependency):
+async def login_for_access_token(db: db_dependency, form_data: OAuth2EmailRequestForm = Depends()):
     user = authenticate_user(form_data.email, form_data.password, db)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
