@@ -41,6 +41,7 @@ class UserRequest(BaseModel):
     password : str
     is_active : bool
     role : str
+    phone_number : str
 
 #Kullanıcı giriş şeması
 class LoginSchema(BaseModel):
@@ -103,7 +104,8 @@ async def create_user(db: db_dependency,user_request : UserRequest):
         last_name = user_request.last_name,
         is_active = user_request.is_active,
         role = user_request.role,
-        hashed_password = bcrypt_context.hash(user_request.password) #parola,veritabanında şifrelenerek tutulur. Şifre olarak yani
+        hashed_password = bcrypt_context.hash(user_request.password), #parola,veritabanında şifrelenerek tutulur. Şifre olarak yani
+        phone_number = user_request.phone_number
     )
     db.add(user)
     db.commit()
