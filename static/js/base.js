@@ -16,7 +16,7 @@
             };
 
             try {
-                const response = await fetch('/todo/todo', {
+                const response = await fetch('/todo/create', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -66,7 +66,7 @@
 
             console.log(`${todoId}`)
 
-            const response = await fetch(`/todo/todo/${todoId}`, {
+            const response = await fetch(`/todo/update/${todoId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -191,7 +191,7 @@
             };
 
             try {
-                const response = await fetch('/auth', {
+                const response = await fetch('/auth/create', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
